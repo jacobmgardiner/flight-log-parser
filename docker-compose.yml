@@ -1,6 +1,7 @@
 services:
   parser:
-    image: ghcr.io/jacobmgardiner/dji-flight-parser-server:1.0.0-djiv1.0.6
+    platform: linux/amd64
+    image: ghcr.io/jacobmgardiner/flight-log-parser:1.0.0
     # pull_policy: always   # uncomment if you always want the latest for this tag
     environment:
       NODE_ENV: production

@@ -3,13 +3,9 @@ name: Build & Publish Image
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*'          # any v* tag (works with v1.0.0 and v1.0.0-djiFR-v1.0.6)
   workflow_dispatch:
     inputs:
-      ref:
-        description: 'Git ref (tag/branch) to build'
-        required: false
-        default: ''
       dji_ref:
         description: 'DJI repo ref (tag/commit) for the build'
         required: false
@@ -20,7 +16,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/jacobmgardiner/dji-flight-parser-server
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/flight-log-parser
 
 jobs:
   build:
@@ -28,8 +24,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Compute DJI_REF
+        id: dji
+        shell: bash
+        run: |
+          DEFAULT="v1.0.6"
+          INPUT="${{ github.event.inputs.dji_ref }}"
+          TAG="${{ github.ref_name }}"
+          if [[ -n "$INPUT" ]]; then
+            REF="$INPUT"
+          elif [[ "$TAG" =~ djiFR-([A-Za-z0-9._-]+)$ ]]; then
+            REF="${BASH_REMATCH[1]}"
+          else
+            REF="$DEFAULT"
+          fi
+          echo "ref=$REF"
+          echo "ref=$REF" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -50,20 +61,27 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            # always publish the raw git tag
+            type=raw,value=${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            # add semver tags when the git tag is semver-like
+            type=semver,pattern={{version}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            # latest only on semver tags
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.description=DJI Flight TXT parser server
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
 
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           build-args: |
-            DJI_REF=${{ github.event.inputs.dji_ref || 'v1.0.6' }}
+            DJI_REF=${{ steps.dji.outputs.ref }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

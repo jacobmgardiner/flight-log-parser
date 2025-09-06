@@ -1,11 +1,6 @@
 # DJI Flight Parser Server
 
-A tiny HTTP service that accepts a **DJI TXT flight log** upload and streams back the JSON produced by DJI’s official **FlightRecordParsingLib** (`FRSample`). This repo ships a single container that includes both the HTTP server and the compiled DJI parser.
-
-* 🧰 Uses DJI’s official parser binary under the hood
-* 🚀 Streams parser stdout to the client (no buffering of huge JSON)
-* 🔒 Sensible defaults: timeouts, concurrency guard, basic rate limiting
-* 🐳 Run via Docker or Docker Compose (pull prebuilt image or build locally)
+A tiny HTTP service that accepts a **DJI TXT flight log** upload and streams back the JSON produced by DJI’s official **FlightRecordParsingLib** (`FRSample`). This repo ships a single container that includes both the HTTP server and the compiled DJI parser. It uses DJI’s official parser binary under the hood and streams its stdout to the client. It's runnable via Docker or Docker Compose (pull prebuilt image or build locally).
 
 > You need a DJI **App Key** from the DJI developer portal. The parser uses this key (as the official sample does) to decrypt the TXT file.
 
