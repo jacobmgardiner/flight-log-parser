@@ -1,3 +1,5 @@
+import 'dotenv/config';
+import cors from 'cors';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
@@ -40,6 +42,12 @@ const upload = multer({
 
 // ----- App -----
 const app = express();
+
+// CORS: allow your dev app (or all during dev)
+app.use(cors({
+    origin: process.env.CORS_ORIGIN?.split(',').map(s => s.trim()) || true,
+    credentials: false
+}));
 
 // Behind proxies (LB/Ingress), ensure correct client IP for rate limit
 app.set('trust proxy', Number(process.env.TRUST_PROXY || 1));
@@ -95,5 +103,5 @@ app.post('/parse', parseLimiter, upload.single('file'), async (req: Request, res
     }
 });
 
-const PORT = Number(process.env.PORT || 8080);
+const PORT = Number(process.env.PORT || 8787);
 app.listen(PORT, () => console.log(`[parser-svc] http://0.0.0.0:${PORT}`));

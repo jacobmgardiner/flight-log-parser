@@ -59,8 +59,6 @@ COPY --from=server-build /app/package.json ./package.json
 COPY --from=server-build /app/dist ./dist
 
 ENV NODE_ENV=production
-# App key at RUNTIME (safer)
-ENV SDK_KEY=
 # Concurrency + timeout guardrails
 ENV MAX_CONCURRENCY=2
 ENV PARSE_TIMEOUT_MS=180000
